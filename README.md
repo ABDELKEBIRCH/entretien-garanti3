@@ -49,41 +49,30 @@ Application web de recherche d'emploi permettant de comparer les offres à un pr
 
 ```text
 entretien-garanti3/
-│
-├── backend/
+├── backend/                 # API FastAPI, services, données et tests
 │   ├── app/
-│   │   ├── routers/
-│   │   ├── services/
-│   │   ├── main.py
-│   │   ├── db.py
-│   │   ├── auth.py
-│   │   ├── config.py
-│   │   ├── matching.py
-│   │   ├── cv_parser.py
-│   │   ├── collector.py
-│   │   ├── plans.py
-│   │   └── ...
-│   │
-│   ├── data/
-│   │   └── sample_cvs/
-│   ├── scripts/
-│   ├── tests/
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── index.html
+│   │   ├── routers/         # Routes de l'API
+│   │   └── services/        # Analyse, collecte, matching et documents
+│   ├── data/                # Offres et CV de démonstration
+│   ├── scripts/             # Outils de développement backend
+│   └── tests/
+├── frontend/                # Application React et configuration Vite
 │   ├── src/
-│   │   ├── App.jsx
-│   │   └── styles.css
-│   ├── package.json
-│   └── vite.config.js
-│
-├── docs/
-├── scripts/
-├── .env.example
-├── .gitignore
+│   └── static/              # Ressources de secours servies par FastAPI
+├── docs/                    # Rapport, présentation et diagrammes
+├── scripts/                 # Démonstration et migration SQLite vers PostgreSQL
+├── .env.example             # Modèle de configuration (sans secrets)
+├── run.ps1                  # Installation et lancement sous Windows
 └── README.md
 ```
+
+### Documentation
+
+- [Rapport du projet](docs/rapport.md) et [version Word](docs/rapport_projet.docx).
+- [Présentation](docs/presentation.html) et [version PowerPoint](docs/presentation_projet_final.pptx).
+- [Diagrammes d'architecture](docs/diagrammes.md) et [version PDF](docs/diagrammes.pdf).
+- [Parcours de démonstration](scripts/demo.md).
+- [Tâches du projet](docs/taches_clickup.md).
 
 ## Installation
 
@@ -140,8 +129,10 @@ Configurer les variables nécessaires dans le fichier `.env`.
 Installer et construire le frontend React depuis le dossier `frontend` :
 
 ```bash
+cd frontend
 pnpm install --frozen-lockfile
 pnpm run build
+cd ..
 ```
 
 Le script `run.ps1` réalise ces étapes avant de lancer FastAPI. En développement frontend, lancez aussi `pnpm dev` dans `frontend` ; Vite transmet les appels `/api` au serveur local FastAPI.
@@ -165,10 +156,6 @@ Sans cette clé, l'application peut utiliser un modèle de lettre basé sur un g
 Depuis la racine du projet, avec l'environnement virtuel et Node.js/pnpm installés :
 
 ```bash
-cd frontend
-pnpm install --frozen-lockfile
-pnpm run build
-cd ..
 python -m uvicorn app.main:app --reload --app-dir backend
 ```
 
