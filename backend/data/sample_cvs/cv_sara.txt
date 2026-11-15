@@ -1,0 +1,18 @@
+Sara El Amrani
+Casablanca — sara.elamrani@email.ma
+
+PROFIL
+Jeune diplômée en informatique, intéressée par le développement backend.
+
+FORMATION
+Licence sciences et techniques, informatique, Université Hassan II, 2024
+
+EXPÉRIENCES
+2024 — Stage 6 mois, Atlas Data Labs : développement d'APIs Python FastAPI, requêtes SQL, Git.
+2023 — Projet universitaire : tableau de bord Excel et scripts Python pandas.
+
+COMPÉTENCES
+Python, FastAPI, SQL, Git, Docker, Excel, HTML, CSS
+
+LANGUES
+Français, Arabe, Anglais

@@ -70,6 +70,19 @@ th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--lin
 .err { background: #f8e4da; }
 .banner-stop { background: #1f5c45; color: #f7f3ea; padding: 14px 16px; border-radius: 14px; margin-bottom: 16px; }
 .tag { font-size: .75rem; background: #e7efe9; padding: 2px 8px; border-radius: 6px; margin-right: 4px; }
+.skill-panel { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 14px 0; background: #f8f6ef; }
+.skill-panel p { margin: 8px 0; }
+.skill-match { background: #dceee2; color: #174b34; }
+.skill-missing { background: #f5e4d7; color: #8b421f; }
+.notes-field { min-height: 88px; }
+.document-card { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(120deg, #fffdf8, #edf4ee); }
+.document-card h3 { margin: 0 0 5px; }
+.document-card p { margin-top: 5px; margin-bottom: 5px; }
+button:disabled { opacity: .65; cursor: wait; }
+.card { transition: transform .18s ease, box-shadow .18s ease; }
+.card:hover { box-shadow: 0 16px 36px rgba(23,33,28,.09); }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #d4a054; outline-offset: 2px; }
+@media (max-width: 640px) { .wrap { padding: 18px 14px 56px; } .top { padding: 14px; } nav { gap: 4px; } nav a, .btn { padding: 8px 10px; font-size: .92rem; } table { display: block; overflow-x: auto; } .document-card { align-items: flex-start; flex-direction: column; } }
 footer { padding: 28px; color: var(--muted); font-size: .85rem; text-align: center; }
 @media (max-width: 860px) {
   .hero, .grid-2, .grid-3, .steps { grid-template-columns: 1fr; }

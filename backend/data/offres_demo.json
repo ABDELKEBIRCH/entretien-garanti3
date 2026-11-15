@@ -1,0 +1,178 @@
+[
+  {
+    "titre": "Data engineer",
+    "entreprise": "Agadir Data Hub",
+    "ville": "Agadir",
+    "description": "CDI. Python, SQL, Spark, Airflow, pipelines ETL et data warehouse. Vous construisez les flux de données de l'entreprise. Français et anglais.",
+    "date_pub": "2026-10-29",
+    "url": "https://demo.entretien-garanti.local/offres/de-agadir"
+  },
+  {
+    "titre": "Ingénieur data / Data engineer junior",
+    "entreprise": "Souss Analytics",
+    "ville": "Agadir",
+    "description": "CDI junior. Python, SQL, dbt, cloud. Industrialisation des données métier, qualité et documentation. Télétravail 1 jour.",
+    "date_pub": "2026-10-27",
+    "url": "https://demo.entretien-garanti.local/offres/de-agadir-junior"
+  },
+  {
+    "titre": "Développeur Python junior",
+    "entreprise": "Atlas Data Labs",
+    "ville": "Casablanca",
+    "description": "Vous développez des API FastAPI, des scripts Python, SQL (PostgreSQL) et collaborez en Git. Connaissance de Docker appréciée. CDI, équipe data de 8 personnes. Français et anglais professionnels.",
+    "date_pub": "2026-10-20",
+    "url": "https://demo.entretien-garanti.local/offres/python-casa"
+  },
+  {
+    "titre": "Développeuse / Développeur Full Stack JavaScript",
+    "entreprise": "Nour Digital",
+    "ville": "Rabat",
+    "description": "React, Node.js, TypeScript, HTML, CSS, MongoDB. Vous livrez des interfaces et des API REST. Git, méthodes agiles. Stage pré-embauche ou CDI junior.",
+    "date_pub": "2026-10-18",
+    "url": "https://demo.entretien-garanti.local/offres/js-rabat"
+  },
+  {
+    "titre": "Data analyst",
+    "entreprise": "Maroc Insights",
+    "ville": "Casablanca",
+    "description": "Excel, Power BI, SQL, Python pandas. Construction de tableaux de bord, nettoyage de données, restitution métier. Anglais lu. CDI.",
+    "date_pub": "2026-10-22",
+    "url": "https://demo.entretien-garanti.local/offres/data-casa"
+  },
+  {
+    "titre": "Ingénieur DevOps junior",
+    "entreprise": "Cloud Maghreb",
+    "ville": "Télétravail",
+    "description": "Linux, Docker, CI/CD, Git, notions AWS. Scripts Python ou Bash. Astreintes limitées. Français obligatoire.",
+    "date_pub": "2026-10-12",
+    "url": "https://demo.entretien-garanti.local/offres/devops"
+  },
+  {
+    "titre": "Chargé de communication digitale",
+    "entreprise": "Agence Palmier",
+    "ville": "Marrakech",
+    "description": "Réseaux sociaux, Canva, rédaction web, SEO de base, community management. Stage 6 mois. Arabe et français.",
+    "date_pub": "2026-10-25",
+    "url": "https://demo.entretien-garanti.local/offres/com-marrakech"
+  },
+  {
+    "titre": "Développeur Java Spring",
+    "entreprise": "Banque Digitale MA",
+    "ville": "Casablanca",
+    "description": "Java, Spring Boot, SQL, microservices, Git. Connaissance du secteur bancaire un plus. CDI, anglais technique.",
+    "date_pub": "2026-09-30",
+    "url": "https://demo.entretien-garanti.local/offres/java-banque"
+  },
+  {
+    "titre": "Designer UI/UX",
+    "entreprise": "Studio Fès",
+    "ville": "Fès",
+    "description": "Figma, prototypage, recherche utilisateur, Photoshop. Portfolio exigé. CDD 12 mois.",
+    "date_pub": "2026-10-08",
+    "url": "https://demo.entretien-garanti.local/offres/ux-fes"
+  },
+  {
+    "titre": "Stagiaire marketing digital",
+    "entreprise": "Souk Ads",
+    "ville": "Casablanca",
+    "description": "Google Ads, SEO, Excel, Canva, reporting. Vous assistez le responsable acquisition. Stage rémunéré 4 à 6 mois.",
+    "date_pub": "2026-10-28",
+    "url": "https://demo.entretien-garanti.local/offres/mkt-stage"
+  },
+  {
+    "titre": "Développeur PHP Laravel",
+    "entreprise": "Web Atlas",
+    "ville": "Tanger",
+    "description": "PHP, Laravel, MySQL, HTML, CSS, JavaScript. Maintenance d'applications métier. CDI junior.",
+    "date_pub": "2026-10-05",
+    "url": "https://demo.entretien-garanti.local/offres/php-tanger"
+  },
+  {
+    "titre": "Data scientist junior",
+    "entreprise": "Orange Labs Maroc",
+    "ville": "Rabat",
+    "description": "Python, pandas, scikit-learn, SQL, notions de NLP. Vous prototypez des modèles et documentez. Anglais. CDI.",
+    "date_pub": "2026-10-15",
+    "url": "https://demo.entretien-garanti.local/offres/ds-rabat"
+  },
+  {
+    "titre": "Assistant chef de projet SI",
+    "entreprise": "ONCF Digital",
+    "ville": "Rabat",
+    "description": "Gestion de projet, Agile, Scrum, Excel, communication. Suivi de tickets, comptes-rendus, coordination équipes IT. CDD.",
+    "date_pub": "2026-10-11",
+    "url": "https://demo.entretien-garanti.local/offres/projet-rabat"
+  },
+  {
+    "titre": "Enseignant vacataire informatique",
+    "entreprise": "École supérieure privée",
+    "ville": "Agadir",
+    "description": "Python, bases de données SQL, algorithmique. 8h par semaine. Pédagogie et clarté orale. Français.",
+    "date_pub": "2026-10-01",
+    "url": "https://demo.entretien-garanti.local/offres/cours-agadir"
+  },
+  {
+    "titre": "Technicien support IT",
+    "entreprise": "Helpdesk Maghreb",
+    "ville": "Casablanca",
+    "description": "Windows, Linux, réseaux, ticketing, communication. Support N1/N2. Horaires bureau. CDI.",
+    "date_pub": "2026-10-19",
+    "url": "https://demo.entretien-garanti.local/offres/support"
+  },
+  {
+    "titre": "Rédacteur web SEO",
+    "entreprise": "Contenu.ma",
+    "ville": "Télétravail",
+    "description": "Rédaction française, SEO, WordPress, recherche de mots-clés. Pigiste ou CDD. Portfolio d'articles.",
+    "date_pub": "2026-10-21",
+    "url": "https://demo.entretien-garanti.local/offres/redac"
+  },
+  {
+    "titre": "Développeur mobile Flutter",
+    "entreprise": "AppSahara",
+    "ville": "Casablanca",
+    "description": "Flutter, Dart, API REST, Git, publication stores. Application grand public. CDI junior.",
+    "date_pub": "2026-10-14",
+    "url": "https://demo.entretien-garanti.local/offres/flutter"
+  },
+  {
+    "titre": "Comptable junior",
+    "entreprise": "Fiduciaire Anfa",
+    "ville": "Casablanca",
+    "description": "Comptabilité générale, Excel, Sage, TVA, lettrage. Diplôme en finance/comptabilité. CDI.",
+    "date_pub": "2026-10-09",
+    "url": "https://demo.entretien-garanti.local/offres/compta"
+  },
+  {
+    "titre": "Ingénieur cybersécurité junior",
+    "entreprise": "SecureMaghreb",
+    "ville": "Rabat",
+    "description": "Réseaux, Linux, analyse de logs, notions ISO 27001, Python. Veille. Anglais. CDI.",
+    "date_pub": "2026-10-17",
+    "url": "https://demo.entretien-garanti.local/offres/cyber"
+  },
+  {
+    "titre": "Product owner junior",
+    "entreprise": "Fintech Casa",
+    "ville": "Casablanca",
+    "description": "Agile, user stories, Figma, SQL de lecture, communication métiers. Stage de fin d'études ou premier CDI.",
+    "date_pub": "2026-10-23",
+    "url": "https://demo.entretien-garanti.local/offres/po"
+  },
+  {
+    "titre": "Développeur frontend React",
+    "entreprise": "Pixel Rif",
+    "ville": "Tétouan",
+    "description": "React, JavaScript, TypeScript, HTML, CSS, Git, accessibilité. CDI. Télétravail 2 jours.",
+    "date_pub": "2026-10-26",
+    "url": "https://demo.entretien-garanti.local/offres/react-tetouan"
+  },
+  {
+    "titre": "Chargé de recrutement IT",
+    "entreprise": "RH Partners",
+    "ville": "Casablanca",
+    "description": "Sourcing, LinkedIn, entretiens, Excel, communication. Secteur informatique. CDI.",
+    "date_pub": "2026-10-04",
+    "url": "https://demo.entretien-garanti.local/offres/rh"
+  }
+]

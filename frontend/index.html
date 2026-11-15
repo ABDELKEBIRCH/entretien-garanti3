@@ -1,16 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Entretien garanti</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@360;450;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/app.css" />
-</head>
-<body>
-  <div id="app"></div>
-  <script src="/static/app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f8f7" />
+    <meta name="description" content="Entretien garanti — votre espace de recherche d'emploi." />
+    <title>Entretien garanti</title>
+  </head>
+  <body>
+    <div id="root">
+      <main class="launch-help">
+        <span class="launch-mark">EG</span>
+        <p class="launch-kicker">ENTRETIEN GARANTI</p>
+        <h1>Lancez votre espace candidat</h1>
+        <p>Cette page a été ouverte comme un fichier local. Pour afficher l’application React, démarrez le serveur du projet.</p>
+        <div class="launch-command"><span>Dans PowerShell, depuis le dossier du projet :</span><code>./run.ps1</code></div>
+        <p class="launch-foot">Puis ouvrez <strong>http://127.0.0.1:8000</strong> dans votre navigateur.</p>
+      </main>
+    </div>
+    <style>
+      .launch-help{box-sizing:border-box;width:min(500px,calc(100% - 36px));margin:12vh auto;padding:38px;background:#fff;border:1px solid #e5ece7;border-radius:18px;box-shadow:0 20px 60px #183b2910;color:#26352d;font:14px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+      .launch-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#176b50;color:#fff;font-weight:800;letter-spacing:-1px}
+      .launch-kicker{margin:22px 0 5px;color:#438061;font-size:10px;font-weight:700;letter-spacing:1.4px}
+      .launch-help h1{margin:0 0 10px;font-size:26px;line-height:1.2;letter-spacing:-.8px}
+      .launch-help>p:not(.launch-kicker){color:#718078;font-size:13px}
+      .launch-command{display:grid;gap:8px;margin:22px 0 14px;padding:15px;border:1px solid #e7eee9;border-radius:10px;background:#f7faf8;color:#66766d;font-size:11px}
+      .launch-command code{color:#176b50;font-size:14px;font-weight:700}
+      .launch-help .launch-foot{margin-bottom:0;font-size:11px}
+    </style>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

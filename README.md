@@ -1,6 +1,6 @@
 # Entretien garanti
 
-Prototype d'un agent intelligent de candidature permettant d'accompagner les candidats dans leur recherche d'emploi, depuis l'importation du CV jusqu'au suivi des candidatures.
+Application web de recherche d'emploi permettant de comparer les offres à un profil, préparer les candidatures et suivre leur progression jusqu'aux entretiens.
 
 ## Présentation du projet
 
@@ -8,28 +8,33 @@ Prototype d'un agent intelligent de candidature permettant d'accompagner les can
 
 - Importer et analyser un CV.
 - Extraire les compétences et les informations du candidat.
-- Collecter des offres d'emploi à partir de données de démonstration et de flux RSS publics.
+- Collecter des offres réelles depuis l'API publique Remotive et les flux RSS We Work Remotely, en complément des annonces de démonstration.
+- Ajouter manuellement les annonces ouvertes sur LinkedIn, Indeed ou un site carrière pour les classer avec les autres offres.
+- Rechercher et trier les annonces par intitulé, entreprise, ville, compétences, score et source.
 - Recommander les offres les plus pertinentes selon le profil du candidat.
 - Expliquer les scores de correspondance entre le CV et les offres.
 - Générer des lettres de motivation adaptées au profil.
 - Gérer les candidatures et suivre leur évolution.
+- Enregistrer les détails d'un entretien et envoyer sa confirmation par e-mail via SMTP.
+- Télécharger, pour chaque candidature, un CV ciblé au format Word et un guide de préparation d'entretien au format PDF.
+- Afficher les compétences requises par offre et les écarts de compétences du profil.
 - Proposer trois formules d'utilisation.
 - Arrêter automatiquement les nouvelles candidatures dès l'obtention d'un entretien.
 
 **Limites du prototype :**
 
-- Aucune connexion à un compte de plateforme d'emploi.
+- Les offres LinkedIn et Indeed ne sont pas aspirées : leur accès automatisé exige une autorisation ou une intégration partenaire.
 - Aucun paiement réel.
-- Aucun envoi réel d'e-mail.
+- L'envoi réel d'e-mail nécessite une configuration SMTP.
 
 ## Technologies utilisées
 
 - **Backend :** Python, FastAPI.
-- **Frontend :** HTML, CSS, JavaScript.
-- **Base de données :** SQLite.
+- **Frontend :** React, Vite, JavaScript.
+- **Base de données :** SQLite par défaut en local, PostgreSQL pour un déploiement évolutif.
 - **Traitement du langage :** TF-IDF et outils d'analyse de texte.
 - **Analyse des CV :** pdfplumber et python-docx.
-- **Collecte des offres :** données JSON de démonstration et flux RSS.
+- **Collecte des offres :** API publique Remotive, flux RSS We Work Remotely, import manuel depuis les plateformes et données JSON de démonstration. La fraîcheur des offres distantes est suivie ; les annonces non revues depuis 30 jours ne sont plus recommandées.
 - **Intelligence artificielle :** intégration LLM optionnelle.
 
 ## Prérequis
@@ -37,6 +42,7 @@ Prototype d'un agent intelligent de candidature permettant d'accompagner les can
 - Python 3.12 recommandé.
 - pip.
 - Git.
+- Node.js 20.19+ et pnpm pour construire l'interface React.
 - Windows, Linux ou macOS.
 
 ## Structure du projet
@@ -66,9 +72,11 @@ entretien-garanti3/
 │
 ├── frontend/
 │   ├── index.html
-│   └── static/
-│       ├── app.css
-│       └── app.js
+│   ├── src/
+│   │   ├── App.jsx
+│   │   └── styles.css
+│   ├── package.json
+│   └── vite.config.js
 │
 ├── docs/
 ├── scripts/
@@ -129,15 +137,38 @@ cp .env.example .env
 
 Configurer les variables nécessaires dans le fichier `.env`.
 
+Installer et construire le frontend React depuis le dossier `frontend` :
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run build
+```
+
+Le script `run.ps1` réalise ces étapes avant de lancer FastAPI. En développement frontend, lancez aussi `pnpm dev` dans `frontend` ; Vite transmet les appels `/api` au serveur local FastAPI.
+
+Pour PostgreSQL, renseigner `DATABASE_URL` (ex. `postgresql://utilisateur:motdepasse@hote:5432/entretien`). Pour envoyer les confirmations d'entretien, renseigner `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` et `SMTP_FROM`. `INTERVIEW_NOTIFICATION_EMAIL` permet de choisir une adresse de réception fixe ; si elle est vide, la confirmation part à l'adresse du compte candidat.
+
+Pour transférer les données d'une base SQLite existante, après installation des dépendances :
+
+```bash
+python scripts/migrate_sqlite_to_postgres.py "postgresql://utilisateur:motdepasse@hote:5432/entretien" --sqlite backend/entretien.db
+```
+
+La migration copie les comptes, profils, offres, candidatures et journal dans une base cible vide. Avec `--replace`, elle remplace les données existantes de la cible. Faire une sauvegarde des deux bases avant une migration de production.
+
 La clé LLM est optionnelle : `OPENAI_API_KEY`.
 
 Sans cette clé, l'application peut utiliser un modèle de lettre basé sur un gabarit factuel, selon la configuration du projet.
 
 ## Lancer l'application
 
-Depuis la racine du projet, avec l'environnement virtuel activé :
+Depuis la racine du projet, avec l'environnement virtuel et Node.js/pnpm installés :
 
 ```bash
+cd frontend
+pnpm install --frozen-lockfile
+pnpm run build
+cd ..
 python -m uvicorn app.main:app --reload --app-dir backend
 ```
 
@@ -173,7 +204,7 @@ python -m pytest backend/tests -q
 ## Architecture générale
 
 ```text
-Frontend (HTML / CSS / JavaScript)
+Frontend (React / Vite)
                  |
                  v
           Backend FastAPI
@@ -181,7 +212,7 @@ Frontend (HTML / CSS / JavaScript)
        +---------+---------+
        |         |         |
        v         v         v
-   SQLite    Analyse CV   Collecte
+   SQLite ou PostgreSQL   Analyse CV   Collecte
                          des offres
        |
        v

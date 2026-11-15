@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Soutenance — Entretien garanti</title>
+  <style>
+    body { font-family: Georgia, serif; margin: 0; background: #17211c; color: #f4efe4; }
+    section { min-height: 100vh; padding: 12vh 12vw; border-bottom: 1px solid #2c4a3d; }
+    h1 { font-size: 3rem; margin: 0 0 .4em; }
+    h2 { font-size: 2rem; }
+    .k { color: #d4a054; letter-spacing: .12em; text-transform: uppercase; font-size: .8rem; font-family: sans-serif; }
+    ul { font-size: 1.25rem; line-height: 1.45; }
+    code { font-family: Consolas, monospace; color: #cde0d4; }
+  </style>
+</head>
+<body>
+  <section>
+    <p class="k">Mini-projet · 15 minutes</p>
+    <h1>Entretien garanti</h1>
+    <p>Un agent de candidature qui s’arrête au premier oui.</p>
+  </section>
+  <section>
+    <h2>Problème</h2>
+    <ul>
+      <li>Jobboards multiples, lettres répétitives, silence des recruteurs.</li>
+      <li>Risque : automatiser le spam et mentir sur le CV.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Promesse</h2>
+    <ul>
+      <li>Trouver → adapter → postuler → s’arrêter.</li>
+      <li>Le candidat relit chaque lettre.</li>
+      <li>Rien n’est inventé hors du CV.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Architecture</h2>
+    <p>SPA + FastAPI + SQLite · parseur · collecteur démo+RSS · TF-IDF · lettres.</p>
+  </section>
+  <section>
+    <h2>Démo live</h2>
+    <ol>
+      <li>Compte + consentement 09-08</li>
+      <li>CV Sara → offres scorées</li>
+      <li>Lettre → envoi simulé</li>
+      <li>Statut entretien → agent stoppé</li>
+    </ol>
+  </section>
+  <section>
+    <h2>Éthique</h2>
+    <ul>
+      <li>Loi 09-08, suppression du compte</li>
+      <li>Pas de comptes tiers, pas de paiement réel</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Limites et suite</h2>
+    <p>Parsing hétérogène, RSS peu local, embeddings en option, e-mail opt-in.</p>
+  </section>
+  <section>
+    <h2>Merci</h2>
+    <p>Questions · <code>http://127.0.0.1:8000</code></p>
+  </section>
+</body>
+</html>

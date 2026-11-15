@@ -29,6 +29,26 @@ const api = async (path, opts = {}) => {
   return data;
 };
 
+async function downloadApi(path, fallbackName) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `Téléchargement impossible (${res.status}).`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") || "";
+  const name = disposition.match(/filename="?([^";]+)"?/i)?.[1] || fallbackName;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 const state = { me: null, flash: "" };
 
 function route() {
@@ -66,7 +86,7 @@ function nav() {
 
 function layout(html) {
   app.innerHTML = `${nav()}<main class="wrap">${state.flash ? `<div class="flash">${state.flash}</div>` : ""}${html}</main>
-    <footer>Prototype pédagogique — pas de scraping de comptes tiers, pas de paiement réel, candidatures simulées. Loi 09-08 : consentement, minimisation, droit de suppression.</footer>`;
+    <footer>Prototype pédagogique — pas de scraping de comptes tiers ni de paiement réel. Confirmations d'entretien par e-mail si SMTP est configuré. Loi 09-08 : consentement, minimisation, droit de suppression.</footer>`;
   state.flash = "";
   $("#logout")?.addEventListener("click", () => {
     localStorage.removeItem(TOKEN_KEY);
@@ -272,7 +292,8 @@ async function offres() {
             <div class="score">${Math.round((o.score||0)*100)}%</div>
           </div>
           <p>${(o.description || "").slice(0, 280)}…</p>
-          <p>${(o.matching?.competences_communes || []).map(c => `<span class="tag">${c}</span>`).join("")}</p>
+          <section class="skill-panel"><strong>Compétences demandées</strong><p>${(o.matching?.competences_requises || []).map(c => `<span class="tag">${esc(c)}</span>`).join("") || `<span class="muted">À confirmer dans l'annonce</span>`}</p>
+          <strong>Votre adéquation</strong><p>${(o.matching?.competences_communes || []).map(c => `<span class="tag skill-match">${esc(c)} ✓</span>`).join("")}${(o.matching?.competences_manquantes || []).map(c => `<span class="tag skill-missing">${esc(c)} à renforcer</span>`).join("")}</p></section>
           <ul>${(o.matching?.raisons || []).map(r => `<li class="muted">${r}</li>`).join("")}</ul>
           <div class="row">
             ${o.url ? `<a class="btn btn-ghost" href="${o.url}" target="_blank" rel="noopener">Annonce</a>` : ""}
@@ -340,20 +361,50 @@ async function candidature(id) {
       <div class="card">
         <h3>Statut</h3>
         <select id="statut">${["a_envoyer","envoyee","reponse","entretien","refus"].map(s => `<option ${s===c.statut?"selected":""} value="${s}">${s}</option>`).join("")}</select>
+        <label>Date et heure de l'entretien</label><input id="entretien-date" type="datetime-local" value="${esc(c.entretien_date)}" />
+        <label>Lieu ou lien de visioconférence</label><input id="entretien-lieu" value="${esc(c.entretien_lieu)}" placeholder="Adresse ou lien Teams / Meet" />
+        <label>Notes et consignes</label><textarea id="entretien-notes" class="notes-field">${esc(c.entretien_notes)}</textarea>
         <button class="btn btn-primary" id="stat" style="margin-top:10px">Mettre à jour</button>
-        <p class="muted">Passer à « entretien » déclenche l'arrêt de l'agent.</p>
+        <p class="muted">Confirmer l'entretien arrête l'agent et envoie un e-mail à l'adresse de votre compte si SMTP est configuré.</p>
+        ${c.entretien_email_envoye ? `<p class="flash">E-mail de confirmation envoyé.</p>` : ""}
         <h3>Bonus formule Entretien garanti</h3>
         <button class="btn btn-ghost" id="cvad">CV adapté (mots-clés)</button>
         <button class="btn btn-ghost" id="prep">Préparation entretien</button>
         <pre id="bonus" style="white-space:pre-wrap;font-family:Outfit,sans-serif">${c.cv_adapte || ""}\n\n${c.questions_entretien || ""}</pre>
       </div>
     </div>
+    <section class="card document-card">
+      <div><p class="kicker">Documents personnalisés</p><h3>Prêts pour cette candidature</h3><p class="muted">Un CV Word ciblé sur l'offre et un guide PDF construit à partir de votre profil, des compétences demandées et des détails d'entretien.</p></div>
+      <div class="row">
+        <button class="btn btn-primary" data-document="cv">Télécharger le CV adapté (.docx)</button>
+        <button class="btn btn-ghost" data-document="guide">Télécharger le guide d'entretien (.pdf)</button>
+      </div>
+    </section>
     <div class="card" style="margin-top:16px">
       <h3>Pourquoi ce score</h3>
       <ul>${(c.explication?.raisons || []).map(r => `<li>${r}</li>`).join("")}</ul>
     </div>
   `);
   const go = async (fn) => { try { await fn(); render(); } catch (e) { alert(e.message); } };
+  app.querySelectorAll("button[data-document]").forEach(button => {
+    button.onclick = async () => {
+      const isCv = button.dataset.document === "cv";
+      const path = isCv
+        ? `/api/candidatures/${id}/documents/cv-adapte.docx`
+        : `/api/candidatures/${id}/documents/guide-entretien.pdf`;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = "Préparation…";
+      try {
+        await downloadApi(path, isCv ? "CV-adapte.docx" : "Guide-entretien.pdf");
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = original;
+      }
+    };
+  });
   $("#gen").onclick = () => go(() => api(`/api/candidatures/${id}/lettre`, { method: "POST" }));
   $("#save").onclick = () => go(() => api(`/api/candidatures/${id}`, { method: "PATCH", body: { lettre: $("#lettre").value } }));
   $("#send").onclick = () => go(async () => {
@@ -361,7 +412,15 @@ async function candidature(id) {
     const r = await api(`/api/candidatures/${id}/envoyer`, { method: "POST" });
     state.flash = r.message;
   });
-  $("#stat").onclick = () => go(() => api(`/api/candidatures/${id}`, { method: "PATCH", body: { statut: $("#statut").value } }));
+  $("#stat").onclick = () => go(async () => {
+    const result = await api(`/api/candidatures/${id}`, { method: "PATCH", body: {
+      statut: $("#statut").value,
+      entretien_date: $("#entretien-date").value,
+      entretien_lieu: $("#entretien-lieu").value,
+      entretien_notes: $("#entretien-notes").value,
+    }});
+    state.flash = result.confirmation_email === "envoye" ? "Entretien confirmé : e-mail envoyé." : result.confirmation_email === "non_configure" && result.statut === "entretien" ? "Entretien confirmé. Configurez SMTP pour envoyer l'e-mail." : result.confirmation_email === "deja_envoye" ? "Entretien confirmé ; l'e-mail avait déjà été envoyé." : result.confirmation_email === "echec" ? "Entretien confirmé, mais l'envoi e-mail a échoué. Vérifiez la configuration SMTP puis réenregistrez." : "Candidature mise à jour.";
+  });
   $("#cvad").onclick = () => go(async () => {
     const r = await api(`/api/candidatures/${id}/cv-adapte`, { method: "POST" });
     state.flash = "CV adapté généré (aucun fait inventé).";
