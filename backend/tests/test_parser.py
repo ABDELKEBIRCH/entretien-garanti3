@@ -28,7 +28,7 @@ def test_structurer_sections():
     assert any("python" == c.lower() for c in p["competences"])
     assert p["experiences"]
     assert p["formation"]
-    assert any("français" == x.lower() for x in p["langues"])
+    assert "French" in p["langues"]  # the parser now returns normalized language names
     assert "Atlas" in p["cv_texte"]
 
 

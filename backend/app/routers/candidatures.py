@@ -410,6 +410,72 @@ def envoyer(cid: int, user: dict = Depends(current_user)):
     }
 
 
+
+
+
+
+
+@router.post("/{cid}/confirmer-envoi")
+def confirmer_envoi(cid: int, user: dict = Depends(current_user)):
+    # Vérifier que la candidature appartient au candidat connecté
+    with db.get_conn() as con:
+        candidature = db.fetchone(
+            con,
+            """
+            SELECT id, statut
+            FROM candidatures
+            WHERE id = ? AND user_id = ?
+            """,
+            (cid, user["id"]),
+        )
+
+        if not candidature:
+            raise HTTPException(
+                status_code=404,
+                detail="Candidature introuvable.",
+            )
+
+        # Éviter de confirmer plusieurs fois la même candidature
+        if candidature["statut"] != "a_envoyer":
+            raise HTTPException(
+                status_code=409,
+                detail="Cette candidature n'est plus en attente d'envoi.",
+            )
+
+        # Enregistrer la confirmation du candidat
+        con.execute(
+            """
+            UPDATE candidatures
+            SET statut = 'envoyee',
+                date_maj = ?
+            WHERE id = ? AND user_id = ?
+            """,
+            (db.now_iso(), cid, user["id"]),
+        )
+
+    # Enregistrer l'événement dans le journal
+    journal.log(
+        user["id"],
+        "candidature_envoyee",
+        {"id": cid, "mode": "confirme_par_candidat"},
+    )
+
+    return {
+        "ok": True,
+        "statut": "envoyee",
+        "message": "Votre candidature est maintenant marquée comme envoyée.",
+    }
+
+
+
+
+
+
+
+
+
+
+
 @router.post("/{cid}/cv-adapte")
 def cv_adapte(cid: int, user: dict = Depends(current_user)):
     plans.assert_bonus(user, "cv_adapte")
@@ -532,6 +598,9 @@ def _safe_filename(value: str) -> str:
 
 @router.get("/{cid}/documents/cv-adapte.docx")
 def telecharger_cv_adapte(cid: int, user: dict = Depends(current_user)):
+
+    plans.assert_bonus(user, "cv_adapte")
+
     """Create a tailored Word CV using only facts already present in the profile."""
     row, offre, profil = _document_context(cid, user)
     profil["nom"] = user["nom"]
@@ -547,6 +616,9 @@ def telecharger_cv_adapte(cid: int, user: dict = Depends(current_user)):
 
 @router.get("/{cid}/documents/guide-entretien.pdf")
 def telecharger_guide_entretien(cid: int, user: dict = Depends(current_user)):
+
+    plans.assert_bonus(user, "prep_entretien")
+
     """Create a personal PDF guide from the selected job and candidate profile."""
     row, offre, profil = _document_context(cid, user)
     profil["nom"] = user["nom"]

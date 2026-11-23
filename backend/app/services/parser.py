@@ -1,3 +1,4 @@
+
 """Extraction heuristique du CV (PDF / DOCX) — sans inventer de faits."""
 
 from __future__ import annotations
@@ -5,44 +6,95 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from .matching import normaliser_competence
+
+
+# Headings used to identify CV sections.
 COMP_HEADERS = re.compile(
-    r"^(compétences|competences|skills|savoir[- ]faire|technologies|outils)\b",
-    re.I,
-)
-EXP_HEADERS = re.compile(
-    r"^(expériences?|experience|parcours professionnel|emploi)\b",
-    re.I,
-)
-FORM_HEADERS = re.compile(
-    r"^(formation|éducation|education|diplômes?|cursus|études)\b",
-    re.I,
-)
-LANG_HEADERS = re.compile(
-    r"^(langues|languages)\b",
-    re.I,
-)
-OTHER_HEADERS = re.compile(
-    r"^(profil|à propos|about|centres d.intérêt|loisirs|certifications?|projets|contact)\b",
+    r"^(compétences(?: techniques)?|competences(?: techniques)?|"
+    r"technical skills?|skills|savoir[- ]faire|technologies|outils)\s*:?\s*$",
     re.I,
 )
 
-SKILL_HINTS = [
-    "python", "java", "javascript", "typescript", "react", "vue", "angular", "node",
-    "django", "flask", "fastapi", "sql", "mysql", "postgresql", "sqlite", "mongodb",
-    "excel", "power bi", "tableau", "pandas", "numpy", "scikit", "tensorflow",
-    "docker", "git", "linux", "html", "css", "php", "laravel", "spring", "c++",
-    "c#", ".net", "kotlin", "swift", "figma", "photoshop", "word", "powerpoint",
-    "communication", "gestion de projet", "agile", "scrum", "marketing", "seo",
-    "canva", "sap", "salesforce", "r", "matlab", "autocad", "solidworks",
-]
+EXP_HEADERS = re.compile(
+    r"^(expériences?(?: professionnelles?)?|experiences?(?: professionnelles?)?|"
+    r"professional experience|work experience|employment history|"
+    r"parcours professionnel|emploi)\s*:?\s*$",
+    re.I,
+)
+
+FORM_HEADERS = re.compile(
+    r"^(formation|éducation|education|academic background|"
+    r"diplômes?|cursus|études|qualifications)\s*:?\s*$",
+    re.I,
+)
+
+LANG_HEADERS = re.compile(
+    r"^(langues|languages)\s*:?\s*$",
+    re.I,
+)
+
+# These sections are not part of the four fields currently stored
+# by the application.
+OTHER_HEADERS = re.compile(
+    r"^(profil|profile|à propos|about|additional information|"
+    r"informations complémentaires|centres d.intérêt|interests|"
+    r"loisirs|certifications?|projets|projects|contact|"
+    r"references|références)\s*:?\s*$",
+    re.I,
+)
+
+# These are category labels, not individual skills.
+SKILL_CATEGORIES = {
+    "programming",
+    "programming languages",
+    "machine learning",
+    "bi & data engineering",
+    "data engineering",
+    "data analysis",
+    "libraries",
+    "concepts",
+    "tools",
+    "frameworks",
+    "databases",
+    "cloud",
+    "development",
+    "programmation",
+    "langages de programmation",
+    "apprentissage automatique",
+    "analyse de données",
+    "outils",
+    "bibliothèques",
+    "concepts",
+}
+
+LANGUAGE_NAMES = {
+    "arabic": "Arabic",
+    "arabe": "Arabic",
+    "français": "French",
+    "francais": "French",
+    "french": "French",
+    "anglais": "English",
+    "english": "English",
+    "espagnol": "Spanish",
+    "spanish": "Spanish",
+    "allemand": "German",
+    "german": "German",
+    "amazigh": "Amazigh",
+    "italien": "Italian",
+    "italian": "Italian",
+}
 
 
 def extraire_texte(path: Path) -> str:
     suffix = path.suffix.lower()
+
     if suffix == ".pdf":
         return _pdf(path)
-    if suffix in {".docx", ".doc"}:
+
+    if suffix == ".docx":
         return _docx(path)
+
     raise ValueError("Formats acceptés : PDF et DOCX.")
 
 
@@ -50,9 +102,11 @@ def _pdf(path: Path) -> str:
     import pdfplumber
 
     chunks = []
+
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
             chunks.append(page.extract_text() or "")
+
     return "\n".join(chunks)
 
 
@@ -64,13 +118,31 @@ def _docx(path: Path) -> str:
 
 
 def structurer(texte: str) -> dict:
-    lignes = [re.sub(r"\s+", " ", ln).strip() for ln in texte.splitlines()]
+    lignes = [
+        re.sub(r"\s+", " ", ln).strip()
+        for ln in texte.splitlines()
+    ]
     lignes = [ln for ln in lignes if ln]
+
     sections = _decouper(lignes)
-    competences = _competences(sections.get("competences", ""), texte)
-    experiences = _puces(sections.get("experiences", ""))
-    formation = _puces(sections.get("formation", ""))
-    langues = _langues(sections.get("langues", ""), texte)
+
+    competences = _competences(
+        sections.get("competences", "")
+    )
+
+    experiences = _puces(
+        sections.get("experiences", "")
+    )
+
+    formation = _puces(
+        sections.get("formation", "")
+    )
+
+    langues = _langues(
+        sections.get("langues", ""),
+        sections.get("autres", ""),
+    )
+
     return {
         "competences": competences,
         "experiences": experiences,
@@ -81,89 +153,166 @@ def structurer(texte: str) -> dict:
 
 
 def _decouper(lignes: list[str]) -> dict[str, str]:
-    courant = "profil"
-    buckets: dict[str, list[str]] = {
-        "profil": [],
+    courant = "autres"
+
+    buckets = {
         "competences": [],
         "experiences": [],
         "formation": [],
         "langues": [],
+        "autres": [],
     }
+
     for ln in lignes:
+
         if COMP_HEADERS.match(ln):
             courant = "competences"
             continue
+
         if EXP_HEADERS.match(ln):
             courant = "experiences"
             continue
+
         if FORM_HEADERS.match(ln):
             courant = "formation"
             continue
+
         if LANG_HEADERS.match(ln):
             courant = "langues"
             continue
+
         if OTHER_HEADERS.match(ln):
-            courant = "profil"
+            courant = "autres"
             continue
-        buckets.setdefault(courant, []).append(ln)
-    return {k: "\n".join(v) for k, v in buckets.items()}
+
+        buckets[courant].append(ln)
+
+    return {
+        key: "\n".join(value)
+        for key, value in buckets.items()
+    }
 
 
-def _competences(bloc: str, texte: str) -> list[str]:
-    from .matching import extraire_competences, normaliser_competence
+def _competences(bloc: str) -> list[str]:
+    if not bloc:
+        return []
 
     items = []
-    if bloc:
-        for raw in re.split(r"[,;•·\n|/]", bloc):
-            s = raw.strip(" -–")
-            if 1 < len(s) < 48:
-                items.append(s)
-    found = {s.lower() for s in items}
-    # Les anciens tests par sous-chaîne produisaient des faux positifs
-    # (par exemple « r » dans presque chaque mot). Les termes courts sont
-    # maintenant vérifiés comme des mots entiers ; le catalogue partagé couvre
-    # les compétences plus longues et leurs variantes.
-    for hint in SKILL_HINTS:
-        if hint == "r":
-            present = bool(re.search(r"(?<!\w)R(?!\w)|\bRStudio\b", texte))
-        else:
-            present = bool(re.search(rf"(?<![\w]){re.escape(hint)}(?![\w])", texte, re.I))
-        if present and hint not in found:
-            items.append(hint)
-            found.add(hint)
-    items.extend(extraire_competences(texte))
-    # déduplication en conservant l'ordre
+
+    for ligne in bloc.splitlines():
+
+        # Example: "Programming: Python, SQL, MATLAB"
+        if ":" in ligne:
+            _, contenu = ligne.split(":", 1)
+            ligne = contenu
+
+        morceaux = re.split(r"[,;•·|]", ligne)
+
+        for raw in morceaux:
+            item = raw.strip(" -–\t")
+
+            if not item:
+                continue
+
+            if item.lower() in SKILL_CATEGORIES:
+                continue
+
+            if len(item) < 2 or len(item) > 60:
+                continue
+
+            items.append(item)
+
+    # Remove duplicates while preserving the original order.
     seen = set()
-    out = []
-    for it in items:
-        key = normaliser_competence(it)
-        if key not in seen:
-            seen.add(key)
-            out.append(it)
-    return out
+    resultat = []
+
+    for item in items:
+        key = normaliser_competence(item)
+
+        if not key or key in seen:
+            continue
+
+        seen.add(key)
+        resultat.append(item)
+
+    # Avoid displaying "scikit" alongside "scikit-learn".
+    normalized = {
+        normaliser_competence(item)
+        for item in resultat
+    }
+
+    if "scikit-learn" in normalized:
+        resultat = [
+            item for item in resultat
+            if normaliser_competence(item) != "scikit"
+        ]
+
+    return resultat[:80]
 
 
 def _puces(bloc: str) -> list[str]:
     if not bloc:
         return []
-    lignes = []
-    for ln in bloc.splitlines():
-        ln = ln.strip(" -•–\t")
-        if len(ln) > 8:
-            lignes.append(ln)
-    return lignes[:20]
+
+    resultat = []
+
+    for ligne in bloc.splitlines():
+        ligne = ligne.strip(" -•–\t")
+
+        if len(ligne) > 8:
+            resultat.append(ligne)
+
+    return resultat[:20]
 
 
-def _langues(bloc: str, texte: str) -> list[str]:
-    cibles = ["français", "arabe", "anglais", "espagnol", "allemand", "amazigh", "italien"]
-    source = (bloc + "\n" + texte).lower()
-    out = []
-    for lang in cibles:
-        if lang in source:
-            out.append(lang.capitalize())
-    if bloc:
-        for raw in re.split(r"[,;•\n|/]", bloc):
-            s = raw.strip()
-            if s and s.lower() not in {x.lower() for x in out} and len(s) < 40:
-                out.append(s)
-    return out[:12]
+def _langues(bloc: str, autres: str) -> list[str]:
+    resultat = []
+
+    # First, read the dedicated Languages section.
+    sources = [bloc]
+
+    # Also support lines such as:
+    # Languages: Arabic (Native) · French (Professional...)
+    for ligne in autres.splitlines():
+        if re.match(r"^\s*(languages|langues)\s*:", ligne, re.I):
+            sources.append(ligne.split(":", 1)[1])
+
+    for source in sources:
+        if not source:
+            continue
+
+        morceaux = re.split(r"[,;•·|]", source)
+
+        for morceau in morceaux:
+            morceau = morceau.strip(" -–\t")
+
+            if not morceau:
+                continue
+
+            match = re.match(
+                r"^([A-Za-zÀ-ÿ]+)(.*)$",
+                morceau
+            )
+
+            if not match:
+                continue
+
+            nom = match.group(1).lower()
+            niveau = match.group(2).strip()
+
+            langue = LANGUAGE_NAMES.get(nom)
+
+            if not langue:
+                continue
+
+            valeur = langue
+
+            if niveau:
+                valeur += f" {niveau}"
+
+            if valeur.lower() not in {
+                item.lower() for item in resultat
+            }:
+                resultat.append(valeur)
+
+    return resultat[:12]

@@ -11,14 +11,68 @@ from ..config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 
 
 GARDE_FOU = """
-Tu es un assistant de candidature honnête.
-Règles STRICTES :
-- N'invente AUCUNE compétence, diplôme, entreprise, date ou réalisation absente du CV.
-- Si l'offre demande quelque chose d'absent, ne le prétends pas : tu peux mentionner une motivation d'apprentissage sans mentir.
-- Utilise uniquement les faits fournis (profil JSON + extraits de CV).
-- Français soutenu, 280 à 420 mots, structure : accroche, adéquation, 2 faits du parcours, conclusion.
-- Ne mentionne pas que tu es une IA.
+Tu es un rédacteur professionnel spécialisé dans les candidatures.
+
+RÈGLES STRICTES :
+- N'invente aucune compétence, expérience, formation, date ou réalisation.
+- Utilise uniquement les informations fournies dans le profil et le CV.
+- Ne présente jamais une compétence demandée par l'offre comme acquise si elle est absente du CV.
+- Distingue toujours les compétences techniques des langues.
+- Relie naturellement les expériences et compétences réelles du candidat aux besoins de l'offre.
+- Évite les répétitions, les phrases génériques et les formulations artificielles.
+- Adopte un français professionnel, naturel, fluide et convaincant.
+- Ne mentionne jamais que tu es une IA.
+
+STRUCTURE :
+1. Introduction : poste visé et motivation.
+2. Adéquation : compétences réelles pertinentes pour l'offre.
+3. Parcours : expériences et formation pertinentes.
+4. Conclusion : intérêt pour un échange professionnel.
+
+Rédige une lettre concise de 250 à 350 mots.
+N'utilise aucun placeholder comme (e), (se) ou [Nom].
+Ne répète pas inutilement les informations du CV.
 """
+
+
+
+LANGUES_CONNues = (
+    "français", "french",
+    "anglais", "english",
+    "arabe", "arabic",
+    "espagnol", "spanish",
+    "allemand", "german",
+    "amazigh",
+    "italien", "italian",
+)
+
+
+
+#To seperate the languages from the technical skills 
+
+def est_langue(value: str) -> bool:
+    """Détecte si une compétence correspond à une langue."""
+    texte = str(value).lower()
+
+    # Retirer les niveaux et les indications de maîtrise
+    texte = re.sub(
+        r"\b(natif|native|courant|courante|fluent|bilingue|"
+        r"débutant|débutante|intermédiaire|avancé|avancée|"
+        r"a1|a2|b1|b2|c1|c2)\b",
+        " ",
+        texte,
+    )
+
+    texte = re.sub(r"\([^)]*\)", " ", texte)
+    texte = re.sub(r"[^a-zà-ÿ]+", " ", texte).strip()
+
+    return any(
+        re.search(rf"\b{re.escape(langue)}\b", texte)
+        for langue in LANGUES_CONNues
+    )
+
+
+
 
 
 def faits_autorises(profil: dict) -> dict:
@@ -31,54 +85,233 @@ def faits_autorises(profil: dict) -> dict:
     }
 
 
+
+
 def filtrer_invention(texte: str, profil: dict) -> str:
-    """Retire les phrases qui affirment des compétences hors CV (heuristique)."""
-    autorise = {c.lower() for c in (profil.get("competences") or [])}
+    """Filtre les affirmations non vérifiables à partir du CV."""
+
     cv = (profil.get("cv_texte") or "").lower()
+
+    faits = []
+    for cle in ("competences", "experiences", "formation", "langues"):
+        valeurs = profil.get(cle) or []
+        if isinstance(valeurs, str):
+            valeurs = [valeurs]
+        faits.extend(str(v).lower() for v in valeurs)
+
+    source = cv + " " + " ".join(faits)
+
+    expressions_sensibles = (
+        r"\bexpert(?:e)? en\b",
+        r"\bmaîtrise parfaite\b",
+        r"\bcertifi(?:é|ée|és|ées)\b",
+        r"\b\d+\s+ans? d'expérience\b",
+        r"\bj'ai dirigé\b",
+        r"\bj'ai supervisé\b",
+        r"\bj'ai développé\b",
+        r"\bj'ai réalisé\b",
+        r"\bj'ai piloté\b",
+    )
+
+    # Repérer les compétences explicitement revendiquées.
+    expressions_competences = (
+        r"\b(?:je\s+)?(?:maîtrise|maitrise|connais)\s+(.+)",
+        r"\bcompétences?\s+en\s+(.+)",
+        r"\bconnaissances?\s+en\s+(.+)",
+        r"\bexpérience\s+en\s+(.+)",
+    )
+
     lignes = []
     interdites = []
+
     for phrase in re.split(r"(?<=[.!?])\s+", texte):
         low = phrase.lower()
         suspect = False
-        for mot in ("expert en", "maîtrise parfaite", "certifié", "10 ans d'expérience"):
-            if mot in low and mot not in cv:
-                suspect = True
+
+        # Vérifier les affirmations sensibles.
+        if any(
+            re.search(expression, low)
+            and not re.search(expression, source)
+            for expression in expressions_sensibles
+        ):
+            suspect = True
+
+        # Vérifier les compétences revendiquées.
+        for expression in expressions_competences:
+            match = re.search(expression, low)
+
+            if match:
+                competences = re.split(
+                    r",|\bet\b|\bou\b|/|;",
+                    match.group(1),
+                )
+
+                for competence in competences:
+                    competence = competence.strip(" .,:;")
+
+                    if len(competence) >= 2 and competence not in source:
+                        suspect = True
+                        break
+
+            if suspect:
+                break
+
         if suspect:
             interdites.append(phrase)
-            continue
-        lignes.append(phrase)
+        else:
+            lignes.append(phrase)
+
     clean = " ".join(lignes).strip()
+
     if interdites:
         clean += (
-            "\n\n[Contrôle d'honnêteté] Des formulations trop affirmatives hors CV ont été écartées. "
-            "Compétences autorisées : " + ", ".join(sorted(autorise)[:20]) + "."
+            "\n\n[Contrôle d'honnêteté] Certaines affirmations "
+            "n'ont pas pu être vérifiées à partir du CV et ont été écartées."
         )
+
     return clean
 
 
+
+
+def nettoyer_element(value: str) -> str:
+    """Nettoie la ponctuation et les espaces des éléments du CV."""
+    texte = str(value).strip()
+    texte = re.sub(r"\s*;\s*", "; ", texte)
+    texte = re.sub(r"\s*,\s*", ", ", texte)
+    texte = re.sub(r"[.;,\s]+$", "", texte)
+    return texte
+
+
+
 def lettre_gabarit(profil: dict, offre: dict, matching: dict | None = None) -> str:
-    nom = profil.get("nom") or "le/la candidat(e)"
-    comps = ", ".join((profil.get("competences") or [])[:8]) or "les compétences décrites dans mon CV"
-    exp = (profil.get("experiences") or ["un parcours détaillé dans le CV joint"])[0]
-    form = (profil.get("formation") or ["ma formation"])[0]
-    communs = ""
-    if matching and matching.get("competences_communes"):
-        communs = " En particulier : " + ", ".join(matching["competences_communes"][:6]) + "."
-    ville = offre.get("ville") or "votre localisation"
-    return (
-        f"Objet : Candidature — {offre.get('titre')}\n\n"
-        f"Madame, Monsieur,\n\n"
-        f"Je vous adresse ma candidature pour le poste de {offre.get('titre')} au sein de "
-        f"{offre.get('entreprise') or 'votre entreprise'} ({ville}). "
-        f"Mon profil s'appuie sur {form}, et sur l'expérience suivante : {exp}.\n\n"
-        f"Les éléments de mon CV en lien avec votre annonce sont : {comps}.{communs} "
-        f"Je n'attribue à mon parcours que ce qui y figure réellement ; si l'annonce exige "
-        f"d'autres outils, je suis prêt(e) à les apprendre sans les présenter comme déjà acquis.\n\n"
-        f"Je serais heureux(se) d'échanger lors d'un entretien pour préciser ma motivation "
-        f"et la façon dont je pourrais contribuer à vos équipes.\n\n"
-        f"Veuillez agréer, Madame, Monsieur, l'expression de mes salutations distinguées.\n\n"
-        f"{nom}"
-    )
+    nom = profil.get("nom") or "Candidat"
+
+    titre = offre.get("titre") or "poste proposé"
+    entreprise = offre.get("entreprise") or "votre entreprise"
+    ville = offre.get("ville")
+
+    # Compétences techniques uniquement
+    competences = [
+        c for c in (profil.get("competences") or [])
+        if not est_langue(c)
+    ]
+
+    communs = [
+        c for c in (matching or {}).get("competences_communes", [])
+        if not est_langue(c)
+    ]
+
+    pertinentes = communs or competences
+    pertinentes = pertinentes[:6]
+
+    # Informations du parcours
+    experiences = profil.get("experiences") or []
+    formations = profil.get("formation") or []
+    langues = profil.get("langues") or []
+
+    if isinstance(langues, str):
+        langues = [langues]
+
+    lieu = f" à {ville}" if ville else ""
+    entreprise_formatee = entreprise
+
+    if entreprise.lower().startswith(("agadir ", "atlas ")):
+        pass
+
+    # Formation
+    paragraphe_formation = ""
+    if formations:
+        paragraphe_formation = (
+            "Mon parcours académique comprend notamment "
+            + " ; ".join(nettoyer_element(f) for f in formations[:2]) + "."
+        )
+
+    # Expérience
+    paragraphe_experience = ""
+    if experiences:
+        paragraphe_experience = (
+            "Mon parcours professionnel comprend "
+            + " ; ".join(nettoyer_element(e) for e in experiences[:2]) + "."
+        )
+
+    # Compétences et adéquation avec l'offre
+    paragraphe_competences = ""
+    if pertinentes:
+        paragraphe_competences = (
+            "Les compétences que j'ai développées, notamment "
+            + ", ".join(pertinentes)
+            + ", constituent une base pertinente pour contribuer aux missions de ce poste."
+        )
+
+    # Langues
+    paragraphe_langues = ""
+    if langues:
+        paragraphe_langues = (
+            "Je dispose également des connaissances linguistiques suivantes : "
+            + ", ".join(langues) + "."
+        )
+
+    # Description de l'offre : uniquement pour contextualiser
+    description = (offre.get("description") or "").lower()
+
+    domaines = [
+        mot for mot in (
+            "analyse de données", "data analysis",
+            "traitement des données", "data processing",
+            "visualisation", "reporting",
+            "data warehouse", "entrepôt de données",
+            "etl", "data pipeline", "data pipelines",
+            "intégration des données", "data integration",
+            "qualité des données", "data quality"
+        )
+        if mot in description
+    ]
+
+    if domaines and pertinentes:
+        phrase_motivation = (
+            "L'orientation du poste vers "
+            + ", ".join(domaines[:2])
+            + " correspond à mon intérêt professionnel et aux compétences que j'ai développées."
+        )
+    else:
+        phrase_motivation = (
+            "Cette opportunité représente pour moi l'occasion de mobiliser "
+            "mes connaissances et de poursuivre mon développement professionnel."
+        )
+
+    paragraphes = [
+        f"Objet : Candidature au poste de {titre}",
+        "",
+        "Madame, Monsieur,",
+        "",
+        f"Je vous adresse ma candidature pour le poste de {titre} {entreprise}{lieu}. "
+        + phrase_motivation,
+    ]
+
+    if paragraphe_formation:
+        paragraphes += ["", paragraphe_formation]
+
+    if paragraphe_experience:
+        paragraphes += ["", paragraphe_experience]
+
+    if paragraphe_competences:
+        paragraphes += ["", paragraphe_competences]
+
+    if paragraphe_langues:
+        paragraphes += ["", paragraphe_langues]
+
+    paragraphes += [
+        "",
+        "Je serais ravi de pouvoir échanger avec vous afin de vous présenter "
+        "plus en détail mon parcours et ma motivation pour rejoindre votre équipe.",
+        "",
+        "Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.",
+        "",
+        nom,
+    ]
+
+    return "\n".join(paragraphes)
 
 
 def _chat(messages: list[dict]) -> str | None:
@@ -93,12 +326,30 @@ def _chat(messages: list[dict]) -> str | None:
             )
             r.raise_for_status()
             return r.json()["choices"][0]["message"]["content"].strip()
-    except Exception:
+    except Exception as e:
+        print("Erreur API LLM :", type(e).__name__, str(e))
         return None
 
 
 def generer_lettre(profil: dict, offre: dict, matching: dict | None = None) -> dict:
     faits = faits_autorises(profil)
+
+
+    matching_filtre = dict(matching or {})
+
+    for cle in (
+        "competences_communes",
+        "competences_requises",
+        "competences_profil",
+        "competences_manquantes",
+    ):
+        if cle in matching_filtre:
+            matching_filtre[cle] = [
+                c for c in matching_filtre[cle]
+                if not est_langue(c)
+            ]
+
+
     prompt_user = (
         "Rédige une lettre de motivation.\nOffre :\n"
         + json.dumps(
@@ -108,7 +359,7 @@ def generer_lettre(profil: dict, offre: dict, matching: dict | None = None) -> d
         + "\nProfil (seules sources autorisées) :\n"
         + json.dumps(faits, ensure_ascii=False)
         + "\nPoints de matching :\n"
-        + json.dumps(matching or {}, ensure_ascii=False)
+        + json.dumps(matching_filtre, ensure_ascii=False)
     )
     llm = _chat(
         [
@@ -117,7 +368,7 @@ def generer_lettre(profil: dict, offre: dict, matching: dict | None = None) -> d
         ]
     )
     source = "llm" if llm else "gabarit"
-    texte = filtrer_invention(llm, profil) if llm else lettre_gabarit(profil, offre, matching)
+    texte = filtrer_invention(llm, profil) if llm else lettre_gabarit(profil, offre, matching_filtre)
     return {"texte": texte, "source": source, "honnetete": "faits_cv_uniquement"}
 
 

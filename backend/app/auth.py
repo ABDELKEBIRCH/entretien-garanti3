@@ -42,11 +42,31 @@ def decode_token(token: str) -> dict:
 
 def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
     if creds is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification requise")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentification requise",
+        )
+
     payload = decode_token(creds.credentials)
+
     with db.get_conn() as con:
-        user = db.fetchone(con, "SELECT * FROM users WHERE id = ?", (int(payload["sub"]),))
+        user = db.fetchone(
+            con,
+            "SELECT * FROM users WHERE id = ?",
+            (int(payload["sub"]),),
+        )
+
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Compte introuvable")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Compte introuvable",
+        )
+
+    if not user.get("email_verified"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Veuillez vérifier votre adresse e-mail avant d'accéder à votre espace.",
+        )
+
     user.pop("password_hash", None)
     return user

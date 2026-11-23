@@ -167,6 +167,7 @@ def charger_remotive(timeout: float = 8.0, limit: int = 100) -> int:
             added += 1
     return added
 
+#The main collecting function: It receives a list of requested sources and calls the corresponding functions.
 
 def collecter(sources: list[str], user_id: int | None = None) -> dict:
     added = {"demo": 0, "rss": 0, "remotive": 0}

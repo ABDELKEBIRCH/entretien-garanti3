@@ -22,6 +22,7 @@ class OffreImport(BaseModel):
 
 
 @router.post("/importer")
+
 def importer_offre(body: OffreImport, user: dict = Depends(current_user)):
     """Enregistre une annonce copiée par le candidat depuis une source externe."""
     url = str(body.url)

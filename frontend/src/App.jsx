@@ -96,30 +96,244 @@ function AuthPage({ mode, onAuth, onNotice }) {
   const signup = mode === "inscription";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const verifie = new URLSearchParams(location.search).get("verifie");
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+
   async function submit(event) {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setMessage("");
+
     const form = new FormData(event.currentTarget);
     const body = Object.fromEntries(form.entries());
+
     if (signup) body.consentement_09_08 = form.has("consentement_09_08");
+
+    if (signup && body.password !== body.password_confirm) {
+      setError("Les deux mots de passe ne correspondent pas.");
+      setBusy(false);
+      return;
+    }
+
     try {
-      const result = await api(signup ? "/api/auth/register" : "/api/auth/login", { method: "POST", body });
-      onAuth(result);
-      onNotice(signup ? "Votre espace est prêt." : "Content de vous revoir.");
-      location.hash = "#/dashboard";
-    } catch (err) { setError(err.message); }
-    finally { setBusy(false); }
+      const result = await api(
+        signup ? "/api/auth/register" : "/api/auth/login",
+        { method: "POST", body }
+      );
+
+      if (signup) {
+        setError("");
+        setMessage(
+          "Inscription réussie. Consultez votre boîte e-mail pour vérifier votre adresse."
+        );
+        location.hash = "#/connexion";
+      } else {
+        onAuth(result);
+        onNotice("Content de vous revoir.");
+        history.replaceState(null, "", location.pathname);
+        location.hash = "#/dashboard";
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
   }
-  return <div className="auth-layout"><a className="wordmark auth-wordmark" href="#/"><span className="brand-mark"><BriefcaseBusiness size={19} /></span><span>Entretien<span className="brand-light"> garanti</span></span></a>
-    <section className="auth-panel"><div className="auth-art"><div className="auth-art-copy"><Badge tone="light"><Sparkles size={13} /> Votre prochain chapitre</Badge><h1>Une recherche d’emploi qui avance avec vous.</h1><p>Des offres pertinentes, un suivi simple et une préparation claire à chaque étape.</p><div className="auth-proof"><span><Check size={14} /> Profil valorisé</span><span><Check size={14} /> Parcours suivi</span></div></div><div className="auth-orbit orbit-one"/><div className="auth-orbit orbit-two"/><div className="auth-art-card"><span className="mini-icon"><Target size={16} /></span><div><strong>Une candidature à la fois</strong><small>Du profil à l’entretien</small></div><ArrowUpRight size={17} /></div></div>
-      <div className="auth-form-wrap"><div className="auth-form-head"><span className="eyebrow">{signup ? "Commencer gratuitement" : "Votre espace personnel"}</span><h2>{signup ? "Créer votre compte" : "Bon retour parmi nous"}</h2><p>{signup ? "Configurez votre espace candidat en quelques instants." : "Connectez-vous pour reprendre votre recherche."}</p></div>
-        <form className="form-stack" onSubmit={submit}>{signup && <Field label="Nom complet"><input name="nom" placeholder="Votre nom" required minLength="2" /></Field>}<Field label="Adresse e-mail"><input name="email" type="email" placeholder="vous@exemple.com" required /></Field><Field label="Mot de passe"><input name="password" type="password" placeholder="8 caractères minimum" minLength="8" required /></Field>
-          {signup && <><Field label="Formule"><select name="formule" defaultValue="decouverte"><option value="decouverte">Découverte · gratuit</option><option value="candidat">Candidat</option><option value="garanti">Entretien garanti</option></select></Field><label className="check-row"><input name="consentement_09_08" type="checkbox" required /><span>J’accepte le traitement de mes données pour utiliser le service. Je peux supprimer mon compte depuis mon profil.</span></label></>}
-          {error && <div className="notice notice-error">{error}</div>}<Button type="submit" variant="primary" className="button-wide" disabled={busy}>{busy ? "Un instant…" : signup ? "Créer mon espace" : "Se connecter"}<ArrowRight size={16} /></Button></form>
-        <p className="auth-switch">{signup ? "Vous avez déjà un compte ?" : "Vous découvrez le service ?"} <a href={signup ? "#/connexion" : "#/inscription"}>{signup ? "Se connecter" : "Créer un compte"}</a></p><div className="auth-secure"><ShieldCheck size={15} /> Vos informations restent confidentielles</div>
-      </div>
-    </section><footer className="auth-footer">© 2026 Entretien garanti <span>·</span> Conçu pour accompagner votre recherche</footer></div>;
+
+  return (
+    <div className="auth-layout">
+      <a className="wordmark auth-wordmark" href="#/">
+        <span className="brand-mark">
+          <BriefcaseBusiness size={19} />
+        </span>
+        <span>
+          Entretien<span className="brand-light"> garanti</span>
+        </span>
+      </a>
+
+      <section className="auth-panel">
+        <div className="auth-art">
+          <div className="auth-art-copy">
+            <Badge tone="light">
+              <Sparkles size={13} /> Votre prochain chapitre
+            </Badge>
+            <h1>Une recherche d’emploi qui avance avec vous.</h1>
+            <p>
+              Des offres pertinentes, un suivi simple et une préparation claire
+              à chaque étape.
+            </p>
+            <div className="auth-proof">
+              <span><Check size={14} /> Profil valorisé</span>
+              <span><Check size={14} /> Parcours suivi</span>
+            </div>
+          </div>
+
+          <div className="auth-orbit orbit-one" />
+          <div className="auth-orbit orbit-two" />
+
+          <div className="auth-art-card">
+            <span className="mini-icon"><Target size={16} /></span>
+            <div>
+              <strong>Une candidature à la fois</strong>
+              <small>Du profil à l’entretien</small>
+            </div>
+            <ArrowUpRight size={17} />
+          </div>
+        </div>
+
+        <div className="auth-form-wrap">
+          <div className="auth-form-head">
+            <span className="eyebrow">
+              {signup ? "Commencer gratuitement" : "Votre espace personnel"}
+            </span>
+            <h2>{signup ? "Créer votre compte" : "Bon retour parmi nous"}</h2>
+            <p>
+              {signup
+                ? "Configurez votre espace candidat en quelques instants."
+                : "Connectez-vous pour reprendre votre recherche."}
+            </p>
+          </div>
+
+          <form className="form-stack" onSubmit={submit}>
+            {signup && (
+              <Field label="Nom complet">
+                <input name="nom" placeholder="Votre nom" required minLength="2" />
+              </Field>
+            )}
+
+            <Field label="Adresse e-mail">
+              <input
+                name="email"
+                type="email"
+                placeholder="vous@exemple.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </Field>
+
+            <Field label="Mot de passe">
+              <input
+                name="password"
+                type="password"
+                placeholder="8 caractères minimum"
+                minLength="8"
+                required
+              />
+            </Field>
+
+            {signup && (
+              <Field label="Confirmer le mot de passe">
+                <input
+                  name="password_confirm"
+                  type="password"
+                  placeholder="Retapez le mot de passe"
+                  minLength="8"
+                  required
+                />
+              </Field>
+            )}
+
+            {signup && (
+              <>
+                <Field label="Formule">
+                  <select name="formule" defaultValue="decouverte">
+                    <option value="decouverte">Découverte · gratuit</option>
+                    <option value="candidat">Candidat</option>
+                    <option value="garanti">Entretien garanti</option>
+                  </select>
+                </Field>
+
+                <label className="check-row">
+                  <input
+                    name="consentement_09_08"
+                    type="checkbox"
+                    required
+                  />
+                  <span>
+                    J’accepte le traitement de mes données pour utiliser le
+                    service. Je peux supprimer mon compte depuis mon profil.
+                  </span>
+                </label>
+              </>
+            )}
+
+            {!signup && verifie === "1" && <div className="notice notice-info"><CheckCircle2 size={17} />Votre adresse e-mail est vérifiée. Vous pouvez maintenant vous connecter.</div>}
+            {!signup && verifie === "0" && <div className="notice notice-error"><X size={17} />Lien invalide, expiré ou déjà utilisé. Si votre compte n’est pas encore vérifié, demandez un nouveau lien.</div>}
+            {error && <div className="notice notice-error">{error}</div>}
+
+            {message && (
+              <div className="notice notice-success">{message}</div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              className="button-wide"
+              disabled={busy}
+            >
+              {busy
+                ? "Un instant…"
+                : signup
+                  ? "Créer mon espace"
+                  : "Se connecter"}
+              <ArrowRight size={16} />
+            </Button>
+          </form>
+
+          {!signup && (
+            <button
+              type="button"
+              className="auth-resend"
+              onClick={async () => {
+                if (!email.trim()) {
+                  setError("Saisissez votre adresse e-mail.");
+                  return;
+                }
+
+                try {
+                  const result = await api(
+                    "/api/auth/renvoyer-verification",
+                    {
+                      method: "POST",
+                      body: { email },
+                    }
+                  );
+
+                  setError("");
+                  setMessage(result.message);
+                } catch (err) {
+                  setError(err.message);
+                }
+              }}
+            >
+              Renvoyer le lien de vérification
+            </button>
+          )}
+
+          <p className="auth-switch">
+            {signup
+              ? "Vous avez déjà un compte ?"
+              : "Vous découvrez le service?"}{" "}
+            <a href={signup ? "#/connexion" : "#/inscription"}>
+              {signup ? "Se connecter" : "Créer un compte"}
+            </a>
+          </p>
+
+          <div className="auth-secure">
+            <ShieldCheck size={15} /> Vos informations restent confidentielles
+          </div>
+        </div>
+      </section>
+
+      <footer className="auth-footer">
+        © 2026 Entretien garanti <span>·</span> Conçu pour accompagner votre
+        recherche
+      </footer>
+    </div>
+  );
 }
 
 function Field({ label, hint, children, className = "" }) {
@@ -143,7 +357,13 @@ function Shell({ route, user, onLogout, notice, onDismiss, children }) {
       {navigation.map((group) => <div className="nav-group" key={group.heading}><div className="nav-heading">{group.heading}</div>{group.items.map(([path, label, Icon]) => <a key={path} className={`nav-link ${activePath === path ? "nav-active" : ""}`} href={`#${path}`} onClick={() => setMobileOpen(false)}><Icon size={18} strokeWidth={1.8} /><span>{label}</span>{path === "/candidatures" && <span className="nav-indicator" />}</a>)}</div>)}
       <div className="sidebar-spacer"/><div className="sidebar-help"><span className="help-icon"><CircleHelp size={17} /></span><strong>Besoin d’un coup de main ?</strong><p>Votre profil complet améliore la pertinence des offres.</p><a href="#/profil">Compléter mon profil <ArrowRight size={13} /></a></div><button className="account-button" onClick={onLogout}><span className="avatar">{initials}</span><span className="account-copy"><strong>{user?.nom || "Mon compte"}</strong><small>{user?.email || "Candidat"}</small></span><LogOut size={16} /></button>
     </aside>
-    <div className="main-column"><header className="topbar"><button className="icon-button mobile-menu" aria-label="Ouvrir le menu" onClick={() => setMobileOpen(true)}><Menu size={20} /></button><div className="breadcrumbs"><span>Mon espace</span><span className="crumb-slash">/</span><strong>{route.startsWith("/candidature/") ? "Détail de candidature" : (navigation.flatMap((g) => g.items).find(([path]) => path === route)?.[1] || "Accueil")}</strong></div><div className="topbar-actions"><span className="topbar-status"><i /> Espace candidat</span><a className="icon-button" href="#/journal" title="Activité récente" aria-label="Activité récente"><Bell size={18} /></a><span className="topbar-avatar">{initials}</span></div></header>
+    <div className="main-column"><header className="topbar"><button className="icon-button mobile-menu" aria-label="Ouvrir le menu" onClick={() => setMobileOpen(true)}><Menu size={20} /></button><div className="breadcrumbs"><span>Mon espace</span><span className="crumb-slash">/</span><strong>{route.startsWith("/candidature/") ? "Détail de candidature" : (navigation.flatMap((g) => g.items).find(([path]) => path === route)?.[1] || "Accueil")}</strong></div><div className="topbar-actions"><span className="topbar-status"><i /> Espace candidat</span><a className="icon-button" href="#/journal" title="Activité récente" aria-label="Activité récente"><Bell size={18} /></a><a
+    className="topbar-avatar"
+    href="#/profil"
+    title="Mon profil"
+    aria-label="Accéder à mon profil">
+  {initials}
+</a></div></header>
       {notice && <div className="toast"><CheckCircle2 size={17} />{notice}<button aria-label="Fermer" onClick={onDismiss}><X size={15} /></button></div>}
       <main className="content-area">{children}</main><footer className="app-footer"><span>Entretien garanti</span><span>Un accompagnement clair, à chaque étape.</span><a href="#/journal">Confidentialité & activité</a></footer>
     </div>
@@ -247,52 +467,432 @@ function ApplicationsPage() {
   </>;
 }
 
+
 function ApplicationDetail({ id, user, onNotice }) {
   const { data, error, loading } = useData("/api/candidatures");
   const [application, setApplication] = useState(null);
+  const [confirmSend, setConfirmSend] = useState(false);
   const [busy, setBusy] = useState("");
-  useEffect(() => { const found = data?.items.find((item) => String(item.id) === String(id)); if (found) setApplication(found); }, [data, id]);
+
+  useEffect(() => {
+    const found = data?.items.find(
+      (item) => String(item.id) === String(id)
+    );
+    if (found) setApplication(found);
+  }, [data, id]);
+
   if (loading) return <Loading />;
   if (error) return <NoticeError message={error} />;
-  if (!application) return <EmptyState icon={FileText} title="Candidature introuvable" text="Cette candidature n’est plus disponible." action={<a href="#/candidatures" className="button">Retour au suivi</a>} />;
+
+  if (!application) {
+    return (
+      <EmptyState
+        icon={FileText}
+        title="Candidature introuvable"
+        text="Cette candidature n’est plus disponible."
+        action={
+          <a href="#/candidatures" className="button">
+            Retour au suivi
+          </a>
+        }
+      />
+    );
+  }
+
   const c = application;
   const requiredSkills = c.explication?.competences_requises || [];
-  const matchedSkillKeys = new Set((c.explication?.competences_communes || []).map((skill) => skill.toLocaleLowerCase("fr")));
-  const missingSkills = c.explication?.competences_manquantes || [];
+  const matchedSkillKeys = new Set(
+    (c.explication?.competences_communes || []).map((skill) =>
+      skill.toLocaleLowerCase("fr")
+    )
+  );
+
   const progressStages = ["a_envoyer", "envoyee", "reponse", "entretien"];
   const currentStage = progressStages.indexOf(c.statut);
+
   async function run(name, action) {
     setBusy(name);
-    try { const result = await action(); if (result) setApplication((old) => ({ ...old, ...result })); return result; }
-    catch (err) { onNotice(err.message); }
-    finally { setBusy(""); }
+    try {
+      const result = await action();
+      if (result) {
+        setApplication((old) => ({ ...old, ...result }));
+      }
+      return result;
+    } catch (err) {
+      onNotice(err.message);
+    } finally {
+      setBusy("");
+    }
   }
-  async function updateStatus(event) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const result = await run("status", () => api(`/api/candidatures/${id}`, { method: "PATCH", body: Object.fromEntries(form.entries()) }));
-    if (!result) return;
-    const message = result.confirmation_email === "envoye" ? "Entretien confirmé : e-mail envoyé." : result.confirmation_email === "non_configure" && result.statut === "entretien" ? "Entretien confirmé. Configurez SMTP pour envoyer l’e-mail." : result.confirmation_email === "echec" ? "Entretien enregistré, mais l’e-mail n’a pas pu être envoyé." : "Votre candidature a été mise à jour.";
-    onNotice(message);
+
+    // Appelée quand la candidate clique sur "Oui" dans la notification.
+  function confirmerEnvoi() {
+    setConfirmSend(false); // on ferme la notification tout de suite
+    run("confirm-send", async () => {
+      // Appel au backend : il passe le statut de "a_envoyer" à "envoyee" (aucun envoi réel)
+      const result = await api(`/api/candidatures/${id}/confirmer-envoi`, { method: "POST" });
+      onNotice(result.message); // affiche la notification verte de succès, comme "Lettre enregistrée"
+      return result;
+    });
   }
+
+
   async function makeDownload(type) {
     const isCv = type === "cv";
     setBusy(type);
+
     try {
-      await download(`/api/candidatures/${id}/documents/${isCv ? "cv-adapte.docx" : "guide-entretien.pdf"}`, isCv ? "CV-adapte.docx" : "Guide-entretien.pdf");
-      onNotice(isCv ? "Votre CV adapté est prêt." : "Votre guide d’entretien est prêt.");
-    } catch (err) { onNotice(err.message); }
-    finally { setBusy(""); }
+      await download(
+        `/api/candidatures/${id}/documents/${
+          isCv ? "cv-adapte.docx" : "guide-entretien.pdf"
+        }`,
+        isCv ? "CV-adapte.docx" : "Guide-entretien.pdf"
+      );
+
+      onNotice(
+        isCv
+          ? "Votre CV adapté est prêt."
+          : "Votre guide d’entretien est prêt."
+      );
+    } catch (err) {
+      onNotice(err.message);
+    } finally {
+      setBusy("");
+    }
   }
-  return <><a className="back-link" href="#/candidatures"><ArrowLeft size={15} />Retour à mes candidatures</a><div className="detail-heading"><div><div className="eyebrow">DÉTAIL DE LA CANDIDATURE</div><h1>{c.titre}</h1><div className="detail-company"><Building2 size={16} />{c.entreprise}<span>·</span><MapPin size={15} />{c.ville}</div></div><div className="detail-score"><Score value={c.score} /></div></div>
-    <section className={`application-progress ${c.statut === "refus" ? "progress-refused" : ""}`} aria-label="Progression de la candidature">{progressStages.map((stage, index) => <div key={stage} className={`progress-step ${c.statut !== "refus" && index <= currentStage ? "progress-step-done" : ""}`}><span className="progress-dot">{c.statut !== "refus" && index < currentStage ? <Check size={12} /> : index + 1}</span><span>{STATUS_NAMES[stage]}</span></div>)}{c.statut === "refus" && <strong className="refusal-label">Candidature clôturée</strong>}</section>
-    <div className="detail-layout"><div className="detail-main"><section className="panel detail-panel"><div className="panel-heading"><div><h2>Votre lettre de motivation</h2><p>Relisez et ajustez le texte avant de l’utiliser.</p></div><Badge tone={c.lettre ? "green" : "amber"} dot>{c.lettre ? "Brouillon disponible" : "À rédiger"}</Badge></div><textarea className="letter-editor" value={c.lettre || ""} onChange={(event) => setApplication({ ...c, lettre: event.target.value })} placeholder="Générez une première version puis adaptez-la à votre voix…"/><div className="action-row"><Button disabled={busy === "generate-letter"} onClick={() => run("generate-letter", async () => { const result = await api(`/api/candidatures/${id}/lettre`, { method: "POST" }); setApplication((old) => ({ ...old, lettre: result.texte })); onNotice("Votre lettre a été préparée."); })}><Sparkles size={15} />{busy === "generate-letter" ? "Génération…" : "Générer une lettre"}</Button><Button variant="primary" disabled={busy === "save-letter"} onClick={() => run("save-letter", async () => { await api(`/api/candidatures/${id}`, { method: "PATCH", body: { lettre: c.lettre || "" } }); onNotice("Lettre enregistrée."); })}><Check size={15} />Enregistrer</Button>{c.url && <a className="button button-quiet" href={c.url} target="_blank" rel="noreferrer">Annonce <ArrowUpRight size={14} /></a>}</div></section>
-        <section className="panel document-panel"><div className="document-panel-icon"><FileCheck2 size={20} /></div><div className="document-panel-copy"><div className="eyebrow">VOS DOCUMENTS</div><h2>Prêts pour cette opportunité</h2><p>Un CV ciblé et un guide d’entretien construits à partir de votre profil.</p></div><div className="document-actions"><Button variant="primary" disabled={busy === "cv"} onClick={() => makeDownload("cv")}><ArrowDownToLine size={15} />CV adapté · Word</Button><Button disabled={busy === "guide"} onClick={() => makeDownload("guide")}><ArrowDownToLine size={15} />Guide · PDF</Button></div></section>
-        <section className="panel detail-panel"><div className="panel-heading"><div><h2>Compétences demandées dans l’annonce</h2><p>{requiredSkills.length} compétence{requiredSkills.length === 1 ? "" : "s"} détectée{requiredSkills.length === 1 ? "" : "s"} · {matchedSkillKeys.size} retrouvée{matchedSkillKeys.size === 1 ? "" : "s"} dans votre profil et votre CV</p></div><span className="match-score-text">{Math.round((c.score || 0) * 100)}%</span></div>{requiredSkills.length ? <div className="skill-list skill-list-all" aria-label="Liste complète des compétences requises">{requiredSkills.map((skill) => { const matched = matchedSkillKeys.has(skill.toLocaleLowerCase("fr")); return <span className={`skill-chip ${matched ? "skill-good" : "skill-missing"}`} key={skill} title={matched ? "Présente dans votre profil ou votre CV" : "Non détectée dans votre profil ou votre CV"}>{matched ? <Check size={12} /> : <X size={12} />}{skill}</span>; })}</div> : <p className="no-skills-message">Aucune compétence explicite détectée dans le texte de cette annonce.</p>}<div className="reason-list">{(c.explication?.raisons || []).map((reason, index) => <div className="reason-item" key={index}><span><Check size={14} /></span>{reason}</div>)}</div></section></div>
-      <aside className="detail-aside"><section className="panel status-panel"><div className="panel-heading"><div><h2>Suivi du processus</h2><p>Actualisez l’état de votre candidature.</p></div><Settings2 size={17} /></div><form className="form-stack" onSubmit={updateStatus}><Field label="Statut"><select name="statut" value={c.statut} onChange={(e) => setApplication({ ...c, statut: e.target.value })}>{STATUSES.map((status) => <option key={status} value={status}>{STATUS_NAMES[status]}</option>)}</select></Field><div className="form-divider"><CalendarDays size={15} />INFORMATIONS D’ENTRETIEN</div><Field label="Date et heure"><input name="entretien_date" type="datetime-local" value={c.entretien_date || ""} onChange={(e) => setApplication({ ...c, entretien_date: e.target.value })} /></Field><Field label="Lieu ou lien"><input name="entretien_lieu" value={c.entretien_lieu || ""} onChange={(e) => setApplication({ ...c, entretien_lieu: e.target.value })} placeholder="Adresse ou visioconférence" /></Field><Field label="Notes et consignes"><textarea name="entretien_notes" className="notes-input" value={c.entretien_notes || ""} onChange={(e) => setApplication({ ...c, entretien_notes: e.target.value })} placeholder="Personnes à rencontrer, documents à apporter…" /></Field><Button variant="primary" type="submit" disabled={busy === "status"} className="button-wide">{busy === "status" ? "Enregistrement…" : "Enregistrer le suivi"}<ArrowRight size={15} /></Button></form>{c.entretien_email_envoye ? <div className="email-sent"><CheckCircle2 size={15} />E-mail de confirmation envoyé</div> : <div className="aside-footnote"><ShieldCheck size={14} />La confirmation par e-mail sera envoyée si SMTP est configuré.</div>}</section>
-        <section className="panel prep-panel"><span className="prep-icon"><MessageSquareText size={17} /></span><h3>Préparer votre échange</h3><p>Le guide PDF propose des questions et des pistes de réponse basées sur votre profil.</p><Button className="button-wide" onClick={() => makeDownload("guide")}><ArrowDownToLine size={15} />Télécharger le guide</Button></section></aside></div>
-  </>;
+
+  return (
+    <>
+        {confirmSend && (
+        <div className="toast toast-confirm" role="alertdialog">
+          <CircleHelp size={17} />
+          <span>Avez-vous bien envoyé votre candidature à cette entreprise ?</span>
+          <span className="toast-confirm-actions">
+            <button type="button" className="toast-yes" onClick={confirmerEnvoi}>Oui</button>
+            <button type="button" className="toast-no" onClick={() => setConfirmSend(false)}>Non</button>
+          </span>
+        </div>
+      )}
+      <a className="back-link" href="#/candidatures">
+        <ArrowLeft size={15} />
+        Retour à mes candidatures
+      </a>
+
+      <div className="detail-heading">
+        <div>
+          <div className="eyebrow">DÉTAIL DE LA CANDIDATURE</div>
+          <h1>{c.titre}</h1>
+          <div className="detail-company">
+            <Building2 size={16} />
+            {c.entreprise}
+            <span>·</span>
+            <MapPin size={15} />
+            {c.ville}
+          </div>
+        </div>
+        <div className="detail-score">
+          <Score value={c.score} />
+        </div>
+      </div>
+
+      <section
+        className={`application-progress ${
+          c.statut === "refus" ? "progress-refused" : ""
+        }`}
+        aria-label="Progression de la candidature"
+      >
+        {progressStages.map((stage, index) => (
+          <div
+            key={stage}
+            className={`progress-step ${
+              c.statut !== "refus" && index <= currentStage
+                ? "progress-step-done"
+                : ""
+            }`}
+          >
+            <span className="progress-dot">
+              {c.statut !== "refus" && index < currentStage ? (
+                <Check size={12} />
+              ) : (
+                index + 1
+              )}
+            </span>
+            <span>{STATUS_NAMES[stage]}</span>
+          </div>
+        ))}
+
+        {c.statut === "refus" && (
+          <strong className="refusal-label">
+            Candidature clôturée
+          </strong>
+        )}
+      </section>
+
+      <div className="detail-layout">
+        <div className="detail-main">
+          <section className="panel detail-panel">
+            <div className="panel-heading">
+              <div>
+                <h2>Votre lettre de motivation</h2>
+                <p>
+                  Relisez et ajustez le texte avant de l’utiliser.
+                </p>
+              </div>
+              <Badge tone={c.lettre ? "green" : "amber"} dot>
+                {c.lettre ? "Brouillon disponible" : "À rédiger"}
+              </Badge>
+            </div>
+
+            <textarea
+              className="letter-editor"
+              value={c.lettre || ""}
+              onChange={(event) =>
+                setApplication({ ...c, lettre: event.target.value })
+              }
+              placeholder="Générez une première version puis adaptez-la à votre voix…"
+            />
+
+            <div className="action-row">
+              <Button
+                disabled={busy === "generate-letter"}
+                onClick={() =>
+                  run("generate-letter", async () => {
+                    const result = await api(
+                      `/api/candidatures/${id}/lettre`,
+                      { method: "POST" }
+                    );
+                    setApplication((old) => ({
+                      ...old,
+                      lettre: result.texte,
+                    }));
+                    onNotice("Votre lettre a été préparée.");
+                  })
+                }
+              >
+                <Sparkles size={15} />
+                {busy === "generate-letter"
+                  ? "Génération…"
+                  : "Générer une lettre"}
+              </Button>
+
+              <Button
+                variant="primary"
+                disabled={busy === "save-letter"}
+                onClick={() =>
+                  run("save-letter", async () => {
+                    await api(`/api/candidatures/${id}`, {
+                      method: "PATCH",
+                      body: { lettre: c.lettre || "" },
+                    });
+                    onNotice("Lettre enregistrée.");
+                  })
+                }
+              >
+                <Check size={15} />
+              </Button>
+
+              {c.statut === "a_envoyer" && (
+                <Button
+                  variant="primary"
+                  disabled={busy === "confirm-send"}
+                  onClick={() => setConfirmSend(true)}
+                >
+                  <Check size={15} />
+                  {busy === "confirm-send"
+                    ? "Confirmation…"
+                    : "Marquer comme envoyée"}
+                </Button>
+              )}
+            </div>
+          </section>
+
+          <section className="panel document-panel">
+            <div className="document-panel-icon">
+              <FileCheck2 size={20} />
+            </div>
+            <div className="document-panel-copy">
+              <div className="eyebrow">VOS DOCUMENTS</div>
+              <h2>Prêts pour cette opportunité</h2>
+              <p>
+                Un CV ciblé et un guide d’entretien construits à partir de
+                votre profil.
+              </p>
+            </div>
+            <div className="document-actions">
+              <Button
+                variant="primary"
+                disabled={busy === "cv"}
+                onClick={() => makeDownload("cv")}
+              >
+                <ArrowDownToLine size={15} />
+                CV adapté · Word
+              </Button>
+              <Button
+                disabled={busy === "guide"}
+                onClick={() => makeDownload("guide")}
+              >
+                <ArrowDownToLine size={15} />
+                Guide · PDF
+              </Button>
+            </div>
+          </section>
+
+          <section className="panel detail-panel">
+            <div className="panel-heading">
+              <div>
+                <h2>Compétences demandées dans l’annonce</h2>
+                <p>
+                  {requiredSkills.length} compétence
+                  {requiredSkills.length === 1 ? "" : "s"} détectée
+                  {requiredSkills.length === 1 ? "" : "s"} ·{" "}
+                  {matchedSkillKeys.size} retrouvée
+                  {matchedSkillKeys.size === 1 ? "" : "s"} dans votre profil
+                  et votre CV
+                </p>
+              </div>
+              <span className="match-score-text">
+                {Math.round((c.score || 0) * 100)}%
+              </span>
+            </div>
+
+            {requiredSkills.length ? (
+              <div
+                className="skill-list skill-list-all"
+                aria-label="Liste complète des compétences requises"
+              >
+                {requiredSkills.map((skill) => {
+                  const matched = matchedSkillKeys.has(
+                    skill.toLocaleLowerCase("fr")
+                  );
+
+                  return (
+                    <span
+                      className={`skill-chip ${
+                        matched ? "skill-good" : "skill-missing"
+                      }`}
+                      key={skill}
+                      title={
+                        matched
+                          ? "Présente dans votre profil ou votre CV"
+                          : "Non détectée dans votre profil ou votre CV"
+                      }
+                    >
+                      {matched ? (
+                        <Check size={12} />
+                      ) : (
+                        <X size={12} />
+                      )}
+                      {skill}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="no-skills-message">
+                Aucune compétence explicite détectée dans le texte de cette
+                annonce.
+              </p>
+            )}
+
+            <div className="reason-list">
+              {(c.explication?.raisons || []).map((reason, index) => (
+                <div className="reason-item" key={index}>
+                  <span>
+                    <Check size={14} />
+                  </span>
+                  {reason}
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <aside className="detail-aside">
+          <section className="panel status-panel">
+            <div className="panel-heading">
+              <div>
+                <h2>Suivi du processus</h2>
+                <p>Consultez l’état de votre candidature.</p>
+              </div>
+              <ShieldCheck size={17} />
+            </div>
+
+            <div className="application-status-display">
+              <span className="field-label">Statut actuel</span>
+              <Badge tone={STATUS_TONES[c.statut] || "slate"} dot>
+                {STATUS_NAMES[c.statut] || c.statut}
+              </Badge>
+            </div>
+
+<div className="interview-info">
+  <div className="form-divider">
+    <CalendarDays size={15} />
+    INFORMATIONS D’ENTRETIEN
+  </div>
+
+  <div className="interview-info-item">
+    <span className="field-label">Date et heure</span>
+    <div className="interview-value">
+      {c.entretien_date
+        ? `${dateShort(c.entretien_date)} · ${timeShort(c.entretien_date)}`
+        : "\u00A0"}
+    </div>
+  </div>
+
+  <div className="interview-info-item">
+    <span className="field-label">Lieu ou lien</span>
+    <div className="interview-value">
+      {c.entretien_lieu || "\u00A0"}
+    </div>
+  </div>
+
+  <div className="interview-info-item">
+    <span className="field-label">Notes et consignes</span>
+    <div className="interview-value">
+      {c.entretien_notes || "\u00A0"}
+    </div>
+  </div>
+</div>
+
+            {c.entretien_email_envoye && (
+              <div className="email-sent">
+                <CheckCircle2 size={15} />
+                E-mail de confirmation envoyé
+              </div>
+            )}
+
+            {!c.entretien_email_envoye && (
+              <div className="aside-footnote">
+                <ShieldCheck size={14} />
+                Le statut et les informations d’entretien sont communiqués
+                par l’entreprise.
+              </div>
+            )}
+          </section>
+
+          <section className="panel prep-panel">
+            <span className="prep-icon">
+              <MessageSquareText size={17} />
+            </span>
+            <h3>Préparer votre échange</h3>
+            <p>
+              Le guide PDF propose des questions et des pistes de réponse
+              basées sur votre profil.
+            </p>
+            <Button
+              className="button-wide"
+              onClick={() => makeDownload("guide")}
+            >
+              <ArrowDownToLine size={15} />
+              Télécharger le guide
+            </Button>
+          </section>
+        </aside>
+      </div>
+    </>
+  );
 }
+
 
 function ProfilePage({ onNotice }) {
   const [refresh, setRefresh] = useState(0);

@@ -136,6 +136,11 @@ def init_db(path: Path | None = None) -> None:
 
 def _migrate_columns(con, postgres: bool = False) -> None:
     migrations = {
+        "users": {
+        "email_verified": "INTEGER NOT NULL DEFAULT 0",
+        "verification_token": "TEXT DEFAULT NULL",
+        "verification_expires_at": "TEXT DEFAULT NULL",
+        },
         "offres": {
             "competences_requises": "TEXT NOT NULL DEFAULT '[]'",
             "last_seen_at": "TEXT NOT NULL DEFAULT ''",
